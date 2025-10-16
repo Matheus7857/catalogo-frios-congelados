@@ -61,6 +61,19 @@ import {
 export default function SistemaCatalogo() {
   // Estados principais
   const [usuario, setUsuario] = useState<Usuario | null>(null)
+  // 🔹 Restaurar login salvo do navegador
+useEffect(() => {
+  const usuarioSalvo = localStorage.getItem("usuarioLogado")
+  if (usuarioSalvo) {
+    try {
+      const user = JSON.parse(usuarioSalvo)
+      setUsuario(user)
+    } catch {
+      localStorage.removeItem("usuarioLogado")
+    }
+  }
+}, [])
+
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [tiposComissao, setTiposComissao] = useState<TipoComissao[]>([])
   const [vendedores, setVendedores] = useState<UsuarioCompleto[]>([])
@@ -164,17 +177,22 @@ export default function SistemaCatalogo() {
 
     const usuarioEncontrado = autenticarUsuario(email, senha)
     
-    if (usuarioEncontrado) {
-      setUsuario({
-        id: usuarioEncontrado.id,
-        nome: usuarioEncontrado.nome,
-        tipo: usuarioEncontrado.tipo,
-        email: usuarioEncontrado.email,
-        adminId: usuarioEncontrado.adminId
-      })
-    } else {
-      alert('Email ou senha incorretos, ou usuário inativo')
-    }
+  if (usuarioEncontrado) {
+  // Salva o login no navegador
+  localStorage.setItem("usuarioLogado", JSON.stringify(usuarioEncontrado))
+
+  // Atualiza o estado do usuário
+  setUsuario({
+    id: usuarioEncontrado.id,
+    nome: usuarioEncontrado.nome,
+    tipo: usuarioEncontrado.tipo,
+    email: usuarioEncontrado.email,
+    adminId: usuarioEncontrado.adminId
+  })
+} else {
+  alert("Email ou senha incorretos, ou usuário inativo")
+}
+
   }
 
   // Função de cadastro (apenas para admins)
@@ -210,14 +228,19 @@ export default function SistemaCatalogo() {
   }
 
   // Função de logout
-  const fazerLogout = () => {
-    setUsuario(null)
-    setProdutos([])
-    setTiposComissao([])
-    setVendedores([])
-    setLoginForm({ email: '', senha: '', nome: '' })
-    setModoLogin('login')
-  }
+const fazerLogout = () => {
+  // 🔹 Remove o login salvo no navegador (encerra sessão persistente)
+  localStorage.removeItem("usuarioLogado")
+
+  // 🔹 Limpa todos os estados da aplicação
+  setUsuario(null)          // remove o usuário logado
+  setProdutos([])           // limpa os produtos do catálogo
+  setTiposComissao([])      // limpa os tipos de comissão
+  setVendedores([])         // limpa os vendedores (se for admin)
+  setLoginForm({ email: '', senha: '', nome: '' }) // limpa o formulário de login
+  setModoLogin('login')     // volta para a tela de login
+}
+
 
   // Filtrar produtos (incluindo disponibilidade)
   const produtosFiltrados = produtos
